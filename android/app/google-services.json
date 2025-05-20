@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "934727078667",
+    "firebase_url": "https://ru2ya-161a0-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "ru2ya-161a0",
+    "storage_bucket": "ru2ya-161a0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:934727078667:android:b0356a0f8d1f9b4fcd480e",
+        "android_client_info": {
+          "package_name": "com.example.ru2ya"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "934727078667-mma7n6tgq8t5jns0mq7iav9963pvh96p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2_OzC0B-BeNV8fBW4uVg6IwDSFMnHbk4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "934727078667-mma7n6tgq8t5jns0mq7iav9963pvh96p.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "934727078667-u7sh4h24t9h7hop32e25a76nfgjsaeam.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ru2ya"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

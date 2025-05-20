@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:ru2ya/features/mobiel%20cam%20feed/presentation/pages/start_feed_view/start_feed_view.dart'
+    show StartFeedView;
 
 import '../../../../core/config/app_router.dart';
 import '../../../../core/config/app_theme.dart';
@@ -415,7 +417,7 @@ class DashboardPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => JoinScreen()),
+                MaterialPageRoute(builder: (context) => StartFeedView()),
               );
             },
           ),

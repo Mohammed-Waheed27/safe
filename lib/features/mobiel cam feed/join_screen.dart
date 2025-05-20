@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'api_call.dart';
-import 'meeting_screen.dart';
+import 'data/api_call.dart';
+import 'presentation/pages/live feed view/live_feed_view.dart';
 
 class JoinScreen extends StatelessWidget {
   final _meetingIdController = TextEditingController();
@@ -13,10 +13,8 @@ class JoinScreen extends StatelessWidget {
       if (!context.mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => MeetingScreen(
-            meetingId: meetingId,
-            token: token,
-          ),
+          builder:
+              (context) => LiveFeedView(meetingId: meetingId, token: token),
         ),
       );
     });
@@ -31,25 +29,21 @@ class JoinScreen extends StatelessWidget {
       _meetingIdController.clear();
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => MeetingScreen(
-            meetingId: meetingId,
-            token: token,
-          ),
+          builder:
+              (context) => LiveFeedView(meetingId: meetingId, token: token),
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Please enter valid meeting id"),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter valid meeting id")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('VideoSDK QuickStart'),
-      ),
+      appBar: AppBar(title: const Text('VideoSDK QuickStart')),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(

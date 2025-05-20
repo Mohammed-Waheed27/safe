@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:videosdk/videosdk.dart';
 
 class ParticipantTile extends StatefulWidget {
@@ -49,8 +50,14 @@ class _ParticipantTileState extends State<ParticipantTile> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
+    return Container(
+      width: 100.w,
+      height: 100.h,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade800,
+        borderRadius: BorderRadius.circular(10.r),
+      ),
       child:
           videoStream != null
               ? RTCVideoView(

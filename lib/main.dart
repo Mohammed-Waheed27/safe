@@ -1,9 +1,11 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ru2ya/firebase_options.dart';
 
 import 'core/config/app_router.dart';
 import 'core/config/app_theme.dart';
@@ -14,7 +16,7 @@ import 'package:permission_handler/permission_handler.dart';
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
-  // await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "environment/.env");
   await ask_permision();
 
   // Set preferred orientations
@@ -25,7 +27,7 @@ void main() async {
 
   // Initialize Hive for local storage
   await Hive.initFlutter();
-
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Initialize dependency injection
   await di.init();
 
