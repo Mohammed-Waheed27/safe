@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'api_call.dart';
-import 'meeting_screen.dart';
+import '../../../api_call.dart';
+import '../../../meeting_screen.dart';
 
 class JoinScreen extends StatelessWidget {
   final _meetingIdController = TextEditingController();

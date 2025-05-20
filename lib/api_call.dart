@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -14,4 +15,17 @@ Future<String> createMeeting() async {
 
   //Destructuring the roomId from the response
   return json.decode(httpResponse.body)['roomId'];
+}
+
+Future<String?> getActiveRoom() async {
+  final doc =
+      await FirebaseFirestore.instance
+          .collection('active_feeds')
+          .doc('current_feed')
+          .get();
+
+  if (doc.exists && doc.data() != null && doc.data()!['roomId'] is String) {
+    return doc.data()!['roomId'] as String;
+  }
+  return null;
 }
