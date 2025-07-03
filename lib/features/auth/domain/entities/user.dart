@@ -11,6 +11,12 @@ class User extends Equatable {
   /// User's email address
   final String email;
 
+  /// User's phone number
+  final String phoneNumber;
+
+  /// Optional third party token
+  final String? thirdPartyToken;
+
   /// Optional profile picture URL
   final String? photoUrl;
 
@@ -19,9 +25,18 @@ class User extends Equatable {
     required this.id,
     required this.fullName,
     required this.email,
+    required this.phoneNumber,
+    this.thirdPartyToken,
     this.photoUrl,
   });
 
   @override
-  List<Object?> get props => [id, fullName, email, photoUrl];
+  List<Object?> get props => [
+    id,
+    fullName,
+    email,
+    phoneNumber,
+    thirdPartyToken,
+    photoUrl,
+  ];
 }

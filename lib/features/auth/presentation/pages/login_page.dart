@@ -1,20 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/config/app_router.dart';
 import '../../../../core/config/app_theme.dart';
+import '../../../../core/di/injection_container.dart' as di;
 import '../../../../features/auth/presentation/pages/signup_page.dart';
 import '../widgets/custom_text_field.dart';
+import '../bloc/auth_bloc.dart';
 
 /// Login page for the Ru'yaAI application
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => di.getIt<AuthBloc>(),
+      child: const _LoginPageContent(),
+    );
+  }
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageContent extends StatefulWidget {
+  const _LoginPageContent();
+
+  @override
+  State<_LoginPageContent> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<_LoginPageContent> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
@@ -28,7 +43,32 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthLoading) {
+          print('🎯 UI: Authentication loading...');
+        } else if (state is Authenticated) {
+          print('🎯 UI: Authentication successful, navigating to dashboard');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome back ${state.user.fullName}!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          AppRouter.navigateToReplacingAll(context, AppRouter.dashboard);
+        } else if (state is AuthError) {
+          print('🎯 UI: Authentication error: ${state.message}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       body: Row(
         children: [
@@ -246,6 +286,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -262,17 +303,14 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // Show a debugging message to verify navigation trigger
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logging in...'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 1),
+    // Trigger login via BLoC
+    print('🎯 UI: Triggering login via BLoC');
+    context.read<AuthBloc>().add(
+      LoginRequested(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       ),
     );
-
-    // For demo purposes, we'll just call the loginUser method
-    AppRouter.loginUser(context);
   }
 
   /// Build the footer with links

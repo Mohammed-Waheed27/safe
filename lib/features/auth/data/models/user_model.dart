@@ -7,6 +7,8 @@ class UserModel extends User {
     required super.id,
     required super.fullName,
     required super.email,
+    required super.phoneNumber,
+    super.thirdPartyToken,
     super.photoUrl,
   });
 
@@ -16,6 +18,8 @@ class UserModel extends User {
       id: json['id'] as String,
       fullName: json['fullName'] as String,
       email: json['email'] as String,
+      phoneNumber: json['phoneNumber'] as String,
+      thirdPartyToken: json['thirdPartyToken'] as String?,
       photoUrl: json['photoUrl'] as String?,
     );
   }
@@ -26,6 +30,8 @@ class UserModel extends User {
       'id': id,
       'fullName': fullName,
       'email': email,
+      'phoneNumber': phoneNumber,
+      'thirdPartyToken': thirdPartyToken,
       'photoUrl': photoUrl,
     };
   }

@@ -3,7 +3,7 @@ part of 'auth_bloc.dart';
 /// Base class for auth events
 abstract class AuthEvent extends Equatable {
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 /// Event for login request
@@ -21,16 +21,26 @@ class LoginRequested extends AuthEvent {
 class RegisterRequested extends AuthEvent {
   final String fullName;
   final String email;
+  final String phoneNumber;
   final String password;
+  final String? thirdPartyToken;
 
   RegisterRequested({
     required this.fullName,
     required this.email,
+    required this.phoneNumber,
     required this.password,
+    this.thirdPartyToken,
   });
 
   @override
-  List<Object> get props => [fullName, email, password];
+  List<Object?> get props => [
+    fullName,
+    email,
+    phoneNumber,
+    password,
+    thirdPartyToken,
+  ];
 }
 
 /// Event for logout request

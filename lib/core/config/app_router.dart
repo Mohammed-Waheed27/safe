@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
@@ -18,6 +19,7 @@ class AppRouter {
   AppRouter._();
 
   // Route names
+  static const String splash = '/';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String dashboard = '/dashboard';
@@ -37,6 +39,7 @@ class AppRouter {
   // Define app routes for named routes
   static Map<String, WidgetBuilder> getRoutes() {
     return {
+      splash: (context) => const SplashPage(),
       login: (context) => const LoginPage(),
       signup: (context) => const SignupPage(),
       dashboard: (context) => const DashboardPage(),

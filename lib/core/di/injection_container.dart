@@ -10,16 +10,16 @@ import '../../features/auth/domain/usecases/register_user.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 
 // Service locator instance
-final sl = GetIt.instance;
+final getIt = GetIt.instance;
 
 /// Initialize all dependencies
 Future<void> init() async {
   // External
   final sharedPreferences = await SharedPreferences.getInstance();
-  sl.registerLazySingleton(() => sharedPreferences);
+  getIt.registerLazySingleton(() => sharedPreferences);
 
   final dio = Dio();
-  sl.registerLazySingleton(() => dio);
+  getIt.registerLazySingleton(() => dio);
 
   // Feature: Auth
   _initAuthDependencies();
@@ -30,23 +30,23 @@ Future<void> init() async {
 /// Initialize auth feature dependencies
 void _initAuthDependencies() {
   // Bloc
-  sl.registerFactory(() => AuthBloc(loginUser: sl(), registerUser: sl()));
+  getIt.registerFactory(() => AuthBloc(loginUser: getIt(), registerUser: getIt()));
 
   // Use cases
-  sl.registerLazySingleton(() => LoginUser(sl()));
-  sl.registerLazySingleton(() => RegisterUser(sl()));
+  getIt.registerLazySingleton(() => LoginUser(getIt()));
+  getIt.registerLazySingleton(() => RegisterUser(getIt()));
 
   // Repository
-  sl.registerLazySingleton<AuthRepository>(
+  getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
-      remoteDataSource: sl(),
+      remoteDataSource: getIt(),
       // Add local data source when needed
     ),
   );
 
   // Data sources
-  sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(dio: sl()),
+  getIt.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(dio: getIt()),
   );
 }
 

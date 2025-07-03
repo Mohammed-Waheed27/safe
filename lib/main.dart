@@ -11,30 +11,67 @@ import 'core/config/app_router.dart';
 import 'core/config/app_theme.dart';
 import 'core/di/injection_container.dart' as di;
 import 'core/util/bloc_observer.dart';
+import 'core/util/firebase_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: "environment/.env");
-  await ask_permision();
 
-  // Set preferred orientations
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  try {
+    print('🚀 App: Starting app initialization...');
 
-  // Initialize Hive for local storage
-  await Hive.initFlutter();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Initialize dependency injection
-  await di.init();
+    // Load environment variables
+    print('📁 App: Loading environment variables...');
+    await dotenv.load(fileName: "environment/.env");
+    print('✅ App: Environment variables loaded');
 
-  // Set custom BLoC observer for better debugging
-  Bloc.observer = AppBlocObserver();
+    // Request permissions
+    print('🔐 App: Requesting permissions...');
+    await ask_permision();
+    print('✅ App: Permissions requested');
 
-  runApp(const RuyaApp());
+    // Set preferred orientations
+    print('📱 App: Setting preferred orientations...');
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    print('✅ App: Orientations set');
+
+    // Initialize Hive for local storage
+    print('💾 App: Initializing Hive...');
+    await Hive.initFlutter();
+    print('✅ App: Hive initialized');
+
+    // Initialize Firebase
+    print('🔥 App: Initializing Firebase...');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('✅ App: Firebase initialized successfully');
+
+    // Test Firebase connection
+    print('🧪 App: Testing Firebase connection...');
+    await FirebaseTest.testCompleteFirebaseConnection();
+
+    // Initialize dependency injection
+    print('🏗️ App: Initializing dependency injection...');
+    await di.init();
+    print('✅ App: Dependency injection initialized');
+
+    // Set custom BLoC observer for better debugging
+    Bloc.observer = AppBlocObserver();
+    print('🎯 App: BLoC observer set');
+
+    print('🚀 App: All initialization complete, starting app...');
+    runApp(const RuyaApp());
+  } catch (e, stackTrace) {
+    print('❌ App: Initialization failed with error: $e');
+    print('📋 App: Stack trace: $stackTrace');
+    // Still try to run the app even if some initialization fails
+    runApp(const RuyaApp());
+  }
 }
 
 class RuyaApp extends StatelessWidget {
@@ -54,7 +91,7 @@ class RuyaApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeMode.dark, // Default to dark theme
-          initialRoute: AppRouter.dashboard, // Start with dashboard
+          initialRoute: AppRouter.splash, // Start with splash screen
           routes: AppRouter.getRoutes(),
           onUnknownRoute: (settings) {
             return MaterialPageRoute(

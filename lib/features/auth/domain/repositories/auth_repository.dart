@@ -15,7 +15,9 @@ abstract class AuthRepository {
   Future<Either<Failure, User>> register({
     required String fullName,
     required String email,
+    required String phoneNumber,
     required String password,
+    String? thirdPartyToken,
   });
 
   /// Log out the current user

@@ -26,15 +26,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LoginRequested event,
     Emitter<AuthState> emit,
   ) async {
+    print('🎯 BLoC: Login requested for ${event.email}');
     emit(AuthLoading());
 
     final params = LoginParams(email: event.email, password: event.password);
 
+    print('🎯 BLoC: Calling login use case');
     final result = await loginUser(params);
 
     result.fold(
-      (failure) => emit(AuthError(message: 'Invalid email or password')),
-      (user) => emit(Authenticated(user: user)),
+      (failure) {
+        print('❌ BLoC: Login failed - ${failure.message}');
+        emit(AuthError(message: 'Invalid email or password: ${failure.message}'));
+      },
+      (user) {
+        print('✅ BLoC: Login successful for user: ${user.fullName}');
+        emit(Authenticated(user: user));
+      },
     );
   }
 
@@ -43,19 +51,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     RegisterRequested event,
     Emitter<AuthState> emit,
   ) async {
+    print('🎯 BLoC: Registration requested for ${event.email}');
     emit(AuthLoading());
 
     final params = RegisterParams(
       fullName: event.fullName,
       email: event.email,
+      phoneNumber: event.phoneNumber,
       password: event.password,
+      thirdPartyToken: event.thirdPartyToken,
     );
 
+    print('🎯 BLoC: Calling register use case');
     final result = await registerUser(params);
 
     result.fold(
-      (failure) => emit(AuthError(message: 'Registration failed')),
-      (user) => emit(Authenticated(user: user)),
+      (failure) {
+        print('❌ BLoC: Registration failed - ${failure.message}');
+        emit(AuthError(message: 'Registration failed: ${failure.message}'));
+      },
+      (user) {
+        print('✅ BLoC: Registration successful for user: ${user.fullName}');
+        emit(Authenticated(user: user));
+      },
     );
   }
 

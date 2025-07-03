@@ -18,10 +18,15 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
+      print('🏗️ Repository: Starting user login for email: $email');
+      
       final userModel = await remoteDataSource.login(email, password);
+      
+      print('✅ Repository: User login successful');
       return Right(userModel);
     } catch (e) {
-      return Left(AuthFailure(message: 'Invalid email or password'));
+      print('❌ Repository: Login failed - ${e.toString()}');
+      return Left(AuthFailure(message: 'Invalid email or password: ${e.toString()}'));
     }
   }
 
@@ -29,17 +34,27 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User>> register({
     required String fullName,
     required String email,
+    required String phoneNumber,
     required String password,
+    String? thirdPartyToken,
   }) async {
     try {
+      print('🏗️ Repository: Starting user registration');
+      print('📝 Registration data: name=$fullName, email=$email, phone=$phoneNumber');
+      
       final userModel = await remoteDataSource.register(
         fullName,
         email,
+        phoneNumber,
         password,
+        thirdPartyToken: thirdPartyToken,
       );
+      
+      print('✅ Repository: User registration successful');
       return Right(userModel);
     } catch (e) {
-      return Left(AuthFailure(message: 'Failed to register user'));
+      print('❌ Repository: Registration failed - ${e.toString()}');
+      return Left(AuthFailure(message: 'Failed to register user: ${e.toString()}'));
     }
   }
 

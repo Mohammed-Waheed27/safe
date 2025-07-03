@@ -8,7 +8,6 @@ import '../../../../core/config/app_router.dart';
 import '../../../../core/config/app_theme.dart';
 import '../../../analysis/presentation/pages/analysis_page.dart';
 import '../../../live/presentation/pages/live_monitoring_page.dart';
-import '../../../mobiel cam feed/join_screen.dart';
 import '../../../results/presentation/pages/results_page.dart';
 import '../widgets/app_sidebar.dart';
 import '../widgets/chart_container.dart';
