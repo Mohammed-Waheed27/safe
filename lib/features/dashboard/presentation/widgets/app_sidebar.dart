@@ -60,6 +60,13 @@ class AppSidebar extends StatelessWidget {
                   ),
                   _buildBottomNavItem(
                     context,
+                    icon: Icons.location_on_outlined,
+                    title: 'Zones',
+                    isSelected: currentIndex == 1,
+                    onTap: () => _navigateTo(context, const ZonesPage()),
+                  ),
+                  _buildBottomNavItem(
+                    context,
                     icon: Icons.videocam_outlined,
                     title: 'Live',
                     isSelected: currentIndex == 2,
@@ -72,13 +79,6 @@ class AppSidebar extends StatelessWidget {
                     title: 'Analyze',
                     isSelected: currentIndex == 3,
                     onTap: () => _navigateTo(context, const AnalysisPage()),
-                  ),
-                  _buildBottomNavItem(
-                    context,
-                    icon: Icons.analytics_outlined,
-                    title: 'Analytics',
-                    isSelected: currentIndex == 5,
-                    onTap: () => _navigateTo(context, const AnalyticsPage()),
                   ),
                   _buildBottomNavItem(
                     context,
@@ -194,12 +194,12 @@ class AppSidebar extends StatelessWidget {
           // Additional navigation options
           _buildDrawerItem(
             context,
-            icon: Icons.location_on_outlined,
-            title: 'Zones',
-            isSelected: currentIndex == 1,
+            icon: Icons.analytics_outlined,
+            title: 'Analytics',
+            isSelected: currentIndex == 5,
             onTap: () {
               Navigator.pop(context);
-              _navigateTo(context, const ZonesPage());
+              _navigateTo(context, const AnalyticsPage());
             },
           ),
           _buildDrawerItem(

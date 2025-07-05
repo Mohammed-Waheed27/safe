@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow authenticated users to read/write any document
+    // You can tighten these rules later for finer-grained security
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    /*
+    // Example of stricter rules for zones and active feeds (uncomment and adjust as needed)
+    match /zones/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /active_zone_feeds/{feedId} {
+      allow read, write: if request.auth != null;
+    }
+    */
+  }
+} 

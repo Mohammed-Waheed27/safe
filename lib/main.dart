@@ -13,6 +13,7 @@ import 'core/di/injection_container.dart' as di;
 import 'core/util/bloc_observer.dart';
 import 'core/util/firebase_test.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'features/zones/presentation/bloc/zone_bloc.dart';
 
 void main() async {
   // Ensure Flutter bindings are initialized
@@ -20,6 +21,13 @@ void main() async {
 
   try {
     print('🚀 App: Starting app initialization...');
+
+    // Initialize Firebase
+    print('🔥 App: Initializing Firebase...');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('✅ App: Firebase initialized successfully');
 
     // Load environment variables
     print('📁 App: Loading environment variables...');
@@ -43,13 +51,6 @@ void main() async {
     print('💾 App: Initializing Hive...');
     await Hive.initFlutter();
     print('✅ App: Hive initialized');
-
-    // Initialize Firebase
-    print('🔥 App: Initializing Firebase...');
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    print('✅ App: Firebase initialized successfully');
 
     // Test Firebase connection
     print('🧪 App: Testing Firebase connection...');
@@ -85,52 +86,55 @@ class RuyaApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MaterialApp(
-          title: 'Ru\'yaAI',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.dark, // Default to dark theme
-          initialRoute: AppRouter.splash, // Start with splash screen
-          routes: AppRouter.getRoutes(),
-          onUnknownRoute: (settings) {
-            return MaterialPageRoute(
-              builder:
-                  (context) => Scaffold(
-                    body: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 60,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Page not found',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'The page ${settings.name} does not exist',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed:
-                                () => Navigator.pushReplacementNamed(
-                                  context,
-                                  AppRouter.dashboard,
-                                ),
-                            child: const Text('Go to Dashboard'),
-                          ),
-                        ],
+        return MultiBlocProvider(
+          providers: [BlocProvider(create: (context) => di.getIt<ZoneBloc>())],
+          child: MaterialApp(
+            title: 'Ru\'yaAI',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.dark, // Default to dark theme
+            initialRoute: AppRouter.splash, // Start with splash screen
+            routes: AppRouter.getRoutes(),
+            onUnknownRoute: (settings) {
+              return MaterialPageRoute(
+                builder:
+                    (context) => Scaffold(
+                      body: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                              size: 60,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Page not found',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'The page ${settings.name} does not exist',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed:
+                                  () => Navigator.pushReplacementNamed(
+                                    context,
+                                    AppRouter.dashboard,
+                                  ),
+                              child: const Text('Go to Dashboard'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );

@@ -1,450 +1,435 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../../core/config/app_theme.dart';
-import '../../../dashboard/presentation/widgets/app_sidebar.dart';
+import '../../../../core/config/app_router.dart';
+import '../../data/models/zone_model.dart';
+import '../bloc/zone_bloc.dart';
 import '../widgets/zone_card.dart';
-import '../widgets/zone_map.dart';
+import '../widgets/zone_form.dart';
+import 'zone_live_view.dart';
 
-/// Zones page for managing monitoring areas
+/// Zones page for managing monitoring areas - similar to mobile cam feed
 class ZonesPage extends StatefulWidget {
-  const ZonesPage({super.key});
+  const ZonesPage({Key? key}) : super(key: key);
 
   @override
-  State<ZonesPage> createState() => _ZonesPageState();
+  _ZonesPageState createState() => _ZonesPageState();
 }
 
 class _ZonesPageState extends State<ZonesPage> {
-  bool _showCreateZoneForm = false;
+  List<ZoneModel> _zonesCache = [];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surfaceColor,
-        title: const Text('Zone Management'),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.refresh_outlined),
-            tooltip: 'Refresh',
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _showCreateZoneForm = true;
-          });
-        },
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Page subtitle
-              Text(
-                'Create and manage monitoring zones for crowd analysis',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.white.withOpacity(0.7),
+    return BlocProvider(
+      create: (context) => GetIt.I<ZoneBloc>()..add(LoadUserZone()),
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          backgroundColor: AppTheme.surfaceColor,
+          title: const Text('Zones'),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: () {
+                context.read<ZoneBloc>().add(LoadUserZone());
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _navigateToCreateZone(context),
+            ),
+          ],
+        ),
+        body: BlocConsumer<ZoneBloc, ZoneState>(
+          listener: (context, state) {
+            if (state is VideoSessionStarted) {
+              final zone = state.zones.firstWhere(
+                (z) => z.roomId == state.roomId,
+              );
+              _navigateToLiveView(context, state.roomId, zone);
+            } else if (state is ZoneCreated) {
+              // Show success message and refresh
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Zone "${state.zones.first.name}" created successfully!',
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
                 ),
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Zone stats
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceColor,
-                  borderRadius: BorderRadius.circular(12.r),
+              );
+              // Navigate back to zones list
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            } else if (state is ZoneUpdated) {
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Zone "${state.zones.first.name}" updated successfully!',
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
                 ),
-                child: Row(
-                  children: [
-                    _buildStatIndicator(
-                      icon: Icons.location_on_outlined,
-                      label: 'All Zones',
-                      value: '1',
-                    ),
-                    const Spacer(),
-                    _buildStatIndicator(
-                      icon: Icons.toggle_on_outlined,
-                      label: 'Active',
-                      value: '0',
-                    ),
-                    const Spacer(),
-                    _buildStatIndicator(
-                      icon: Icons.notifications_active_outlined,
-                      label: 'Alerts',
-                      value: '1',
-                      isAlert: true,
-                    ),
-                  ],
+              );
+              // Navigate back to zones list
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            } else if (state is ZoneDeleted) {
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Zone deleted successfully!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
                 ),
-              ),
+              );
+            } else if (state is ZoneError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
 
-              SizedBox(height: 24.h),
+              context.read<ZoneBloc>().add(LoadUserZone());
+            }
+          },
+          builder: (context, state) {
+            // Cache zones whenever we have them
+            if (state is ZoneLoaded ||
+                state is ZoneCreated ||
+                state is ZoneUpdated ||
+                state is ZoneDeleted ||
+                state is VideoSessionStarted ||
+                state is VideoSessionEnded) {
+              final zones = _getZonesFromState(state);
+              _zonesCache = zones;
 
-              // Create zone form - conditionally displayed
-              if (_showCreateZoneForm) _buildCreateZoneForm(),
+              // Empty state like mobile cam feed
+              if (zones.isEmpty) {
+                return _buildEmptyState(context);
+              }
 
-              // Zone list
-              _buildZoneList(),
+              return _buildZonesList(context, zones);
+            }
 
-              SizedBox(height: 80.h), // Extra space for bottom navigation
-            ],
-          ),
+            // While loading or on intermediate states, fall back to cached zones list
+            if (state is ZoneLoading && _zonesCache.isNotEmpty) {
+              return _buildZonesList(context, _zonesCache);
+            }
+
+            if (state is ZoneLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return const SizedBox.shrink();
+          },
         ),
       ),
-      bottomNavigationBar: const AppSidebar(currentIndex: 1),
     );
   }
 
-  /// Build a stat indicator with icon, label, and value
-  Widget _buildStatIndicator({
-    required IconData icon,
-    required String label,
-    required String value,
-    bool isAlert = false,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20.sp,
-          color: isAlert ? Colors.red : AppTheme.primaryColor,
-        ),
-        SizedBox(width: 8.w),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(Icons.location_city_outlined, size: 80.sp, color: Colors.grey),
+            SizedBox(height: 24.h),
             Text(
-              label,
+              'No zones created yet',
               style: TextStyle(
-                fontSize: 12.sp,
-                color: Colors.white.withOpacity(0.7),
-              ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
+            SizedBox(height: 16.h),
+            Text(
+              'Create your first monitoring zone to start tracking crowds in specific areas.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Colors.white.withOpacity(0.7),
+              ),
+            ),
+            SizedBox(height: 32.h),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 32.w),
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToCreateZone(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+                icon: const Icon(Icons.add),
+                label: Text(
+                  'Create First Zone',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Container(
+              padding: EdgeInsets.all(16.w),
+              margin: EdgeInsets.symmetric(horizontal: 16.w),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceColor,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: AppTheme.primaryColor,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'How it works:',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12.h),
+                  _buildInfoStep('1', 'Create a zone with capacity limits'),
+                  SizedBox(height: 8.h),
+                  _buildInfoStep('2', 'Start live monitoring session'),
+                  SizedBox(height: 8.h),
+                  _buildInfoStep('3', 'Connect devices to count people'),
+                  SizedBox(height: 8.h),
+                  _buildInfoStep('4', 'Get alerts when limits are reached'),
+                ],
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoStep(String number, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 24.w,
+          height: 24.w,
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.white.withOpacity(0.8),
+            ),
+          ),
         ),
       ],
     );
   }
 
-  /// Build the create zone form
-  Widget _buildCreateZoneForm() {
-    return Container(
-      margin: EdgeInsets.only(bottom: 24.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Create New Zone',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+  Widget _buildZonesList(BuildContext context, List<ZoneModel> zones) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<ZoneBloc>().add(LoadUserZone());
+      },
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(vertical: 8.h),
+        itemCount: zones.length,
+        itemBuilder: (context, index) {
+          final zone = zones[index];
+          return GestureDetector(
+            onTap: () {
+              // Navigate to live view if zone is active, otherwise show zone details
+              if (zone.isActive && zone.roomId != null) {
+                _navigateToLiveView(context, zone.roomId!, zone);
+              } else {
+                _showZoneDetailsDialog(context, zone);
+              }
+            },
+            child: ZoneCard(
+              zone: zone,
+              onEdit: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => ZoneForm(zone: zone)),
+                );
+              },
             ),
-          ),
-          SizedBox(height: 16.h),
+          );
+        },
+      ),
+    );
+  }
 
-          // Zone Name
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Zone Name',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
+  void _showZoneDetailsDialog(BuildContext context, ZoneModel zone) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceColor,
+            title: Text(
+              zone.name,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
               ),
-              SizedBox(height: 8.h),
-              TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'e.g. Main Plaza, Entrance Area',
-                  filled: true,
-                  fillColor: AppTheme.backgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 12.h,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  zone.description,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14.sp,
                   ),
                 ),
-                style: TextStyle(fontSize: 14.sp, color: Colors.white),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-
-          // Number of cameras
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Number of Cameras',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
+                SizedBox(height: 16.h),
+                _buildDetailRow(
+                  'Capacity',
+                  '${zone.currentCount}/${zone.maximumCount} people',
+                ),
+                _buildDetailRow('Alert Threshold', '${zone.threshold} people'),
+                _buildDetailRow(
+                  'Status',
+                  zone.isActive ? 'Active' : 'Inactive',
+                ),
+                if (zone.roomId != null)
+                  _buildDetailRow('Room ID', zone.roomId!),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Close',
+                  style: TextStyle(color: Colors.white.withOpacity(0.8)),
                 ),
               ),
-              SizedBox(height: 8.h),
-              TextFormField(
-                decoration: InputDecoration(
-                  hintText: '1',
-                  filled: true,
-                  fillColor: AppTheme.backgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 12.h,
-                  ),
-                ),
-                style: TextStyle(fontSize: 14.sp, color: Colors.white),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-
-          // Maximum capacity slider
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Maximum Capacity',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    '500',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              SliderTheme(
-                data: SliderThemeData(
-                  activeTrackColor: AppTheme.primaryColor,
-                  inactiveTrackColor: Colors.white.withOpacity(0.1),
-                  thumbColor: AppTheme.primaryColor,
-                  trackHeight: 4.h,
-                  thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8.r),
-                ),
-                child: Slider(
-                  value: 500,
-                  min: 10,
-                  max: 1000,
-                  onChanged: (value) {},
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-
-          // Alert threshold slider
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Alert Threshold (80% of max)',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    '400',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              SliderTheme(
-                data: SliderThemeData(
-                  activeTrackColor: Colors.red,
-                  inactiveTrackColor: Colors.white.withOpacity(0.1),
-                  thumbColor: Colors.red,
-                  trackHeight: 4.h,
-                  thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8.r),
-                ),
-                child: Slider(
-                  value: 400,
-                  min: 10,
-                  max: 1000,
-                  onChanged: (value) {},
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-
-          // Description
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Description (Optional)',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'Add details about this zone...',
-                  filled: true,
-                  fillColor: AppTheme.backgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.all(16.w),
-                ),
-                style: TextStyle(fontSize: 14.sp, color: Colors.white),
-                maxLines: 4,
-              ),
-            ],
-          ),
-          SizedBox(height: 24.h),
-
-          // Form buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
+              if (!zone.isActive)
+                ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      _showCreateZoneForm = false;
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _showCreateZoneForm = false;
-                    });
+                    Navigator.of(context).pop();
+                    context.read<ZoneBloc>().add(StartVideoSession());
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
-                  child: Text(
-                    'Create Zone',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: const Text('Start Session'),
                 ),
-              ),
             ],
+          ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80.w,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 12.sp,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// Build the zone list
-  Widget _buildZoneList() {
-    // Mock data
-    final zoneData = {
-      'id': 'zone1',
-      'name': 'Zone zone1',
-      'occupancy': 481,
-      'maxOccupancy': 500,
-      'lastUpdated': '2025-05-03 14:17:01',
-      'hasAlert': true,
-    };
+  void _navigateToCreateZone(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const ZoneForm()));
+  }
 
-    return ZoneCard(
-      zoneName: zoneData['name'] as String,
-      occupancy: zoneData['occupancy'] as int,
-      maxOccupancy: zoneData['maxOccupancy'] as int,
-      lastUpdated: zoneData['lastUpdated'] as String,
-      hasAlert: zoneData['hasAlert'] as bool,
-      feedImage: 'assets/images/zone_feed.jpg',
-      onEdit: () {
-        // Edit zone
-      },
-      onDelete: () {
-        // Delete zone
-      },
-      onView: () {
-        // View zone
-      },
+  List<ZoneModel> _getZonesFromState(ZoneState state) {
+    if (state is ZoneLoaded) return state.zones;
+    if (state is ZoneCreated) return state.zones;
+    if (state is ZoneUpdated) return state.zones;
+    if (state is ZoneDeleted) return state.zones;
+    if (state is VideoSessionStarted) return state.zones;
+    if (state is VideoSessionEnded) return state.zones;
+    return [];
+  }
+
+  void _navigateToLiveView(
+    BuildContext context,
+    String roomId,
+    ZoneModel zone,
+  ) {
+    // Use the zone's specific token instead of default
+    final token =
+        zone.zoneToken.isNotEmpty
+            ? zone.zoneToken
+            : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiI5YjQ4ODEwOC0wNjk0LTQ1ZGMtOGM2ZC1hNzQ1NmY1MGEzN2QiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTcwODk2MzU0MSwiZXhwIjoxNzE2NzM5NTQxfQ.BruXhAuGULv-BW-8KQIjPNa8u3DjZhDL8YCUW6YSyGU';
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => ZoneLiveView(zone: zone, token: token, roomId: roomId),
+      ),
     );
   }
 }
