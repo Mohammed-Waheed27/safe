@@ -12,7 +12,7 @@ import 'features/auth/pages/login_page.dart';
 import 'features/live feed/pages/search rooms/search_active_feeds.dart';
 import 'core/services/auth_service.dart';
 
-void main() async {
+ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await permission();
   await dotenv.load(fileName: ".env");

@@ -13,22 +13,42 @@ class MeetingService {
     bool camEnabled = false,
     int cameraIndex = BACK_CAMERA_INDEX,
   }) {
-    return VideoSDK.createRoom(
-      roomId: roomId,
-      token: token,
-      displayName: displayName,
-      micEnabled: micEnabled,
-      camEnabled: camEnabled,
-      defaultCameraIndex: cameraIndex,
-    );
+    try {
+      debugPrint('Creating VideoSDK room with:');
+      debugPrint('- Room ID: $roomId');
+      debugPrint('- Display Name: $displayName');
+      debugPrint('- Mic Enabled: $micEnabled');
+      debugPrint('- Camera Enabled: $camEnabled');
+      debugPrint('- Camera Index: $cameraIndex');
+
+      final room = VideoSDK.createRoom(
+        roomId: roomId,
+        token: token,
+        displayName: displayName,
+        micEnabled: micEnabled,
+        camEnabled: camEnabled,
+        defaultCameraIndex: cameraIndex,
+      );
+
+      debugPrint('Room created successfully');
+      return room;
+    } catch (e) {
+      debugPrint('Error creating room: $e');
+      rethrow;
+    }
   }
 
   static void toggleMic(Room room, bool currentState) {
     try {
+      debugPrint(
+        'Toggling mic: currently ${currentState ? 'enabled' : 'disabled'}',
+      );
       if (currentState) {
         room.muteMic();
+        debugPrint('Mic muted');
       } else {
         room.unmuteMic();
+        debugPrint('Mic unmuted');
       }
     } catch (e) {
       debugPrint('Error toggling mic: $e');
@@ -37,10 +57,15 @@ class MeetingService {
 
   static void toggleCamera(Room room, bool currentState) {
     try {
+      debugPrint(
+        'Toggling camera: currently ${currentState ? 'enabled' : 'disabled'}',
+      );
       if (currentState) {
         room.disableCam();
+        debugPrint('Camera disabled');
       } else {
         room.enableCam();
+        debugPrint('Camera enabled');
       }
     } catch (e) {
       debugPrint('Error toggling camera: $e');
@@ -49,44 +74,69 @@ class MeetingService {
 
   static Future<void> switchCamera(Room room, bool isCurrentlyFront) async {
     try {
-      // Get available cameras
-      final cameras = await VideoSDK.getVideoDevices();
-      if (cameras == null || cameras.isEmpty) return;
+      debugPrint(
+        'Switching camera from ${isCurrentlyFront ? 'front' : 'back'} to ${isCurrentlyFront ? 'back' : 'front'}',
+      );
 
-      // Find front or back camera based on current state
-      VideoDeviceInfo? targetCamera;
-      if (isCurrentlyFront) {
-        // Switch to back camera
-        targetCamera = cameras.firstWhere(
-          (camera) =>
-              camera.label.toLowerCase().contains('back') ||
-              camera.label.toLowerCase().contains('rear') ||
-              camera.label.toLowerCase().contains('environment'),
-          orElse: () => cameras.first,
-        );
-      } else {
-        // Switch to front camera
-        targetCamera = cameras.firstWhere(
-          (camera) =>
-              camera.label.toLowerCase().contains('front') ||
-              camera.label.toLowerCase().contains('user') ||
-              camera.label.toLowerCase().contains('face'),
-          orElse: () => cameras.length > 1 ? cameras[1] : cameras.first,
-        );
+      // Get available cameras with error handling
+      final cameras = await getAvailableCameras();
+      if (cameras.isEmpty) {
+        debugPrint('No cameras available');
+        return;
       }
 
-      room.changeCam(targetCamera);
+      debugPrint('Available cameras: ${cameras.length}');
+      for (int i = 0; i < cameras.length; i++) {
+        debugPrint('Camera $i: ${cameras[i].label}');
+      }
+
+      // Find target camera based on current state
+      VideoDeviceInfo? targetCamera;
+
+      if (isCurrentlyFront) {
+        // Switch to back camera - look for keywords or use index 0 as fallback
+        targetCamera = cameras.firstWhere(
+          (camera) {
+            final label = camera.label.toLowerCase();
+            return label.contains('back') ||
+                label.contains('rear') ||
+                label.contains('environment') ||
+                label.contains('main');
+          },
+          orElse:
+              () => cameras.first, // Fallback to first camera (usually back)
+        );
+      } else {
+        // Switch to front camera - look for keywords or use index 1 as fallback
+        targetCamera = cameras.firstWhere((camera) {
+          final label = camera.label.toLowerCase();
+          return label.contains('front') ||
+              label.contains('user') ||
+              label.contains('face') ||
+              label.contains('selfie');
+        }, orElse: () => cameras.length > 1 ? cameras[1] : cameras.first);
+      }
+
+      if (targetCamera != null) {
+        debugPrint('Switching to camera: ${targetCamera.label}');
+        await room.changeCam(targetCamera);
+        debugPrint('Camera switched successfully');
+      } else {
+        debugPrint('No suitable camera found for switching');
+      }
     } catch (e) {
       debugPrint('Error switching camera: $e');
+      // Don't rethrow - camera switching failures shouldn't crash the app
     }
   }
 
-  // Note: VideoSDK doesn't support flash control directly
-  // This would need to be implemented using a separate camera plugin
   static Future<List<VideoDeviceInfo>> getAvailableCameras() async {
     try {
+      debugPrint('Getting available cameras...');
       final cameras = await VideoSDK.getVideoDevices();
-      return cameras ?? [];
+      final cameraList = cameras ?? [];
+      debugPrint('Found ${cameraList.length} cameras');
+      return cameraList;
     } catch (e) {
       debugPrint('Error getting cameras: $e');
       return [];
@@ -101,29 +151,45 @@ class MeetingService {
     required VoidCallback onRoomLeft,
     required Function(dynamic error) onError,
   }) {
-    room.on(Events.roomJoined, () {
-      debugPrint('Room joined successfully');
-      onRoomJoined();
-    });
+    try {
+      debugPrint('Setting up room event listeners...');
 
-    room.on(Events.participantJoined, (participant) {
-      debugPrint('Participant joined: ${participant.id}');
-      onParticipantJoined(participant);
-    });
+      room.on(Events.roomJoined, () {
+        debugPrint('Event: Room joined successfully');
+        onRoomJoined();
+      });
 
-    room.on(Events.participantLeft, (participantId) {
-      debugPrint('Participant left: $participantId');
-      onParticipantLeft(participantId);
-    });
+      room.on(Events.participantJoined, (participant) {
+        debugPrint(
+          'Event: Participant joined: ${participant?.id ?? 'unknown'}',
+        );
+        onParticipantJoined(participant);
+      });
 
-    room.on(Events.roomLeft, () {
-      debugPrint('Left the room');
-      onRoomLeft();
-    });
+      room.on(Events.participantLeft, (participantId) {
+        debugPrint('Event: Participant left: $participantId');
+        onParticipantLeft(participantId);
+      });
 
-    room.on(Events.error, (error) {
-      debugPrint('Room error: $error');
-      onError(error);
-    });
+      room.on(Events.roomLeft, () {
+        debugPrint('Event: Left the room');
+        onRoomLeft();
+      });
+
+      room.on(Events.error, (error) {
+        debugPrint('Event: Room error: $error');
+        onError(error);
+      });
+
+      // Add additional event listeners for better error handling
+      room.on(Events.micRequested, () {
+        debugPrint('Event: Microphone requested');
+      });
+
+      debugPrint('Room event listeners set up successfully');
+    } catch (e) {
+      debugPrint('Error setting up room event listeners: $e');
+      throw e;
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/appthme.dart';
 
@@ -29,96 +30,227 @@ class EnhancedMeetingControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
+      width: double.infinity,
+      margin: EdgeInsets.symmetric(horizontal: 12.w),
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.1),
+        color: Colors.black.withOpacity(0.8),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.2),
-          width: 1.w,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.w),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildControlButton(
-            onPressed: onToggleMicButtonPressed,
-            icon: Icon(
-              isMicEnabled ? Icons.mic : Icons.mic_off,
-              color: isMicEnabled ? AppTheme.textPrimaryColor : Colors.red,
-              size: 24.sp,
-            ),
-            isActive: isMicEnabled,
+          // Main controls row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Microphone Button
+              _buildMainControlButton(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  onToggleMicButtonPressed();
+                },
+                icon: isMicEnabled ? Icons.mic : Icons.mic_off,
+                isActive: isMicEnabled,
+                label: 'Mic',
+              ),
+
+              // Camera Button
+              _buildMainControlButton(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  onToggleCameraButtonPressed();
+                },
+                icon: isCameraEnabled ? Icons.videocam : Icons.videocam_off,
+                isActive: isCameraEnabled,
+                label: 'Camera',
+              ),
+
+              // Leave Button
+              _buildLeaveButton(
+                onPressed: () {
+                  HapticFeedback.heavyImpact();
+                  onLeaveButtonPressed();
+                },
+              ),
+            ],
           ),
-          _buildControlButton(
-            onPressed: onToggleCameraButtonPressed,
-            icon: Icon(
-              isCameraEnabled ? Icons.videocam : Icons.videocam_off,
-              color: isCameraEnabled ? AppTheme.textPrimaryColor : Colors.red,
-              size: 24.sp,
-            ),
-            isActive: isCameraEnabled,
-          ),
+
+          // Secondary controls (only show if camera is enabled)
           if (isCameraEnabled) ...[
-            _buildControlButton(
-              onPressed: onSwitchCameraButtonPressed,
-              icon: Icon(
-                isFrontCamera ? Icons.camera_front : Icons.camera_rear,
-                color: AppTheme.textPrimaryColor,
-                size: 24.sp,
-              ),
-              isActive: true,
-            ),
-            if (onToggleFlashButtonPressed != null && !isFrontCamera)
-              _buildControlButton(
-                onPressed: onToggleFlashButtonPressed!,
-                icon: Icon(
-                  isFlashEnabled ? Icons.flash_on : Icons.flash_off,
-                  color:
-                      isFlashEnabled
-                          ? Colors.yellow
-                          : AppTheme.textPrimaryColor,
-                  size: 24.sp,
+            SizedBox(height: 16.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Camera Switch Button
+                _buildSecondaryControlButton(
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    onSwitchCameraButtonPressed();
+                  },
+                  icon: isFrontCamera ? Icons.camera_front : Icons.camera_rear,
+                  label: isFrontCamera ? 'Front' : 'Back',
+                  isActive: true,
                 ),
-                isActive: true,
-              ),
+
+                // Flash Button (only for back camera)
+                if (!isFrontCamera && onToggleFlashButtonPressed != null) ...[
+                  SizedBox(width: 24.w),
+                  _buildSecondaryControlButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      onToggleFlashButtonPressed!();
+                    },
+                    icon: isFlashEnabled ? Icons.flash_on : Icons.flash_off,
+                    label: 'Flash',
+                    isActive: isFlashEnabled,
+                  ),
+                ],
+              ],
+            ),
           ],
-          _buildControlButton(
-            onPressed: onLeaveButtonPressed,
-            icon: Icon(Icons.call_end, color: Colors.white, size: 24.sp),
-            isActive: true,
-            backgroundColor: Colors.red,
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildControlButton({
+  Widget _buildMainControlButton({
     required VoidCallback onPressed,
-    required Widget icon,
+    required IconData icon,
     required bool isActive,
-    Color? backgroundColor,
+    required String label,
   }) {
-    return InkWell(
+    final Color activeColor = Colors.green;
+    final Color inactiveColor = Colors.red;
+    final Color currentColor = isActive ? activeColor : inactiveColor;
+
+    return GestureDetector(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.all(12.w),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 50), // Super fast animation
+        curve: Curves.easeOut,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         decoration: BoxDecoration(
-          color:
-              backgroundColor ??
-              (isActive ? AppTheme.primaryColor : Colors.grey.shade600),
-          borderRadius: BorderRadius.circular(12.r),
+          color: currentColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: currentColor, width: 2.w),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
+              color: currentColor.withOpacity(0.3),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: icon,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: currentColor, size: 24.sp),
+            SizedBox(height: 4.h),
+            Text(
+              label,
+              style: TextStyle(
+                color: currentColor,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecondaryControlButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required bool isActive,
+  }) {
+    final Color activeColor = Colors.blue;
+    final Color flashColor = Colors.amber;
+    final Color inactiveColor = Colors.grey;
+
+    // Special handling for flash button
+    final Color currentColor =
+        label == 'Flash'
+            ? (isActive ? flashColor : inactiveColor)
+            : activeColor;
+
+    return GestureDetector(
+      onTap: onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 50), // Super fast animation
+        curve: Curves.easeOut,
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: currentColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: currentColor.withOpacity(0.6),
+            width: 1.5.w,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: currentColor, size: 18.sp),
+            SizedBox(width: 6.w),
+            Text(
+              label,
+              style: TextStyle(
+                color: currentColor,
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeaveButton({required VoidCallback onPressed}) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Colors.red, Color(0xFFD32F2F)],
+          ),
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.call_end, color: Colors.white, size: 24.sp),
+            SizedBox(height: 4.h),
+            Text(
+              'Leave',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

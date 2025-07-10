@@ -100,10 +100,11 @@ class _searchActiveFeedsState extends State<searchActiveFeeds> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EnhancedMeetingScreen(
-          meetingId: zone.videoSDK.roomId,
-          token: zone.videoSDK.token,
-        ),
+        builder:
+            (context) => EnhancedMeetingScreen(
+              meetingId: zone.videoSDK.roomId,
+              token: zone.videoSDK.token,
+            ),
       ),
     );
   }
@@ -113,6 +114,7 @@ class _searchActiveFeedsState extends State<searchActiveFeeds> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppTheme.primaryColor,
         title: Text(
           'Phone Live',
@@ -182,214 +184,255 @@ class _searchActiveFeedsState extends State<searchActiveFeeds> {
 
               // Loading or zones list
               Expanded(
-                child: isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: AppTheme.primaryColor,
-                        ),
-                      )
-                    : userZones.isEmpty
+                child:
+                    isLoading
                         ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  size: 64.sp,
-                                  color: AppTheme.textSecondaryColor,
+                          child: CircularProgressIndicator(
+                            color: AppTheme.primaryColor,
+                          ),
+                        )
+                        : userZones.isEmpty
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64.sp,
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                              SizedBox(height: 16.h),
+                              Text(
+                                'No zones found',
+                                style: TextStyle(
+                                  color: AppTheme.textPrimaryColor,
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                SizedBox(height: 16.h),
-                                Text(
-                                  'No zones found',
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                'Contact support to set up your zones',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondaryColor,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                              SizedBox(height: 24.h),
+                              ElevatedButton(
+                                onPressed: _loadUserZones,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 24.w,
+                                    vertical: 12.h,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Refresh',
                                   style: TextStyle(
                                     color: AppTheme.textPrimaryColor,
-                                    fontSize: 20.sp,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16.sp,
                                   ),
                                 ),
-                                SizedBox(height: 8.h),
-                                Text(
-                                  'Contact support to set up your zones',
-                                  style: TextStyle(
-                                    color: AppTheme.textSecondaryColor,
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                                SizedBox(height: 24.h),
-                                ElevatedButton(
-                                  onPressed: _loadUserZones,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.primaryColor,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 24.w,
-                                      vertical: 12.h,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.r),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Refresh',
-                                    style: TextStyle(
-                                      color: AppTheme.textPrimaryColor,
-                                      fontSize: 16.sp,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
+                              ),
+                            ],
+                          ),
+                        )
                         : ListView.builder(
-                            itemCount: userZones.length,
-                            itemBuilder: (context, index) {
-                              final zone = userZones[index];
-                              final isConfigured = zone.videoSDK.roomId.isNotEmpty && 
-                                                 zone.videoSDK.token.isNotEmpty;
+                          itemCount: userZones.length,
+                          itemBuilder: (context, index) {
+                            final zone = userZones[index];
+                            final isConfigured =
+                                zone.videoSDK.roomId.isNotEmpty &&
+                                zone.videoSDK.token.isNotEmpty;
 
-                              return Container(
-                                margin: EdgeInsets.only(bottom: 12.h),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.backgroundColor,
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  border: Border.all(
-                                    color: AppTheme.primaryColor.withOpacity(0.2),
-                                    width: 1.w,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                            return Container(
+                              margin: EdgeInsets.only(bottom: 12.h),
+                              decoration: BoxDecoration(
+                                color: AppTheme.backgroundColor,
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(
+                                  color: AppTheme.primaryColor.withOpacity(0.2),
+                                  width: 1.w,
                                 ),
-                                child: InkWell(
-                                  onTap: isConfigured ? () => _joinZone(zone) : null,
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16.w),
-                                    child: Row(
-                                      children: [
-                                        // Zone image/icon
-                                        Container(
-                                          width: 60.w,
-                                          height: 60.h,
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.primaryColor.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(12.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: InkWell(
+                                onTap:
+                                    isConfigured ? () => _joinZone(zone) : null,
+                                borderRadius: BorderRadius.circular(16.r),
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.w),
+                                  child: Row(
+                                    children: [
+                                      // Zone image/icon
+                                      Container(
+                                        width: 60.w,
+                                        height: 60.h,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryColor
+                                              .withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            12.r,
                                           ),
-                                          child: zone.image.isNotEmpty
-                                              ? ClipRRect(
-                                                  borderRadius: BorderRadius.circular(12.r),
+                                        ),
+                                        child:
+                                            zone.image.isNotEmpty
+                                                ? ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        12.r,
+                                                      ),
                                                   child: Image.network(
                                                     zone.image,
                                                     fit: BoxFit.cover,
-                                                    errorBuilder: (context, error, stackTrace) => 
-                                                        Icon(
-                                                          Icons.video_camera_back,
-                                                          color: AppTheme.primaryColor,
+                                                    errorBuilder:
+                                                        (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) => Icon(
+                                                          Icons
+                                                              .video_camera_back,
+                                                          color:
+                                                              AppTheme
+                                                                  .primaryColor,
                                                           size: 30.sp,
                                                         ),
                                                   ),
                                                 )
-                                              : Icon(
+                                                : Icon(
                                                   Icons.video_camera_back,
                                                   color: AppTheme.primaryColor,
                                                   size: 30.sp,
                                                 ),
-                                        ),
-                                        SizedBox(width: 16.w),
+                                      ),
+                                      SizedBox(width: 16.w),
 
-                                        // Zone info
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
+                                      // Zone info
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              zone.name,
+                                              style: TextStyle(
+                                                color:
+                                                    AppTheme.textPrimaryColor,
+                                                fontSize: 16.sp,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4.h),
+                                            if (zone.description.isNotEmpty)
                                               Text(
-                                                zone.name,
+                                                zone.description,
                                                 style: TextStyle(
-                                                  color: AppTheme.textPrimaryColor,
-                                                  fontSize: 16.sp,
-                                                  fontWeight: FontWeight.w600,
+                                                  color:
+                                                      AppTheme
+                                                          .textSecondaryColor,
+                                                  fontSize: 14.sp,
                                                 ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              SizedBox(height: 4.h),
-                                              if (zone.description.isNotEmpty)
-                                                Text(
-                                                  zone.description,
-                                                  style: TextStyle(
-                                                    color: AppTheme.textSecondaryColor,
-                                                    fontSize: 14.sp,
-                                                  ),
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              SizedBox(height: 8.h),
-                                              
-                                              // Zone status
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    padding: EdgeInsets.symmetric(
-                                                      horizontal: 8.w,
-                                                      vertical: 4.h,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color: isConfigured
-                                                          ? Colors.green.withOpacity(0.1)
-                                                          : Colors.orange.withOpacity(0.1),
-                                                      borderRadius: BorderRadius.circular(6.r),
-                                                    ),
-                                                    child: Text(
-                                                      isConfigured ? 'Ready' : 'Not Configured',
-                                                      style: TextStyle(
-                                                        color: isConfigured ? Colors.green : Colors.orange,
-                                                        fontSize: 12.sp,
-                                                        fontWeight: FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 8.w),
-                                                  Text(
-                                                    '${zone.cameras} camera${zone.cameras != 1 ? 's' : ''}',
-                                                    style: TextStyle(
-                                                      color: AppTheme.textSecondaryColor,
-                                                      fontSize: 12.sp,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                            SizedBox(height: 8.h),
 
-                                        // Join button/indicator
-                                        if (isConfigured)
-                                          Container(
-                                            padding: EdgeInsets.all(8.w),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.primaryColor,
-                                              borderRadius: BorderRadius.circular(8.r),
+                                            // Zone status
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 8.w,
+                                                    vertical: 4.h,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        isConfigured
+                                                            ? Colors.green
+                                                                .withOpacity(
+                                                                  0.1,
+                                                                )
+                                                            : Colors.orange
+                                                                .withOpacity(
+                                                                  0.1,
+                                                                ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6.r,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    isConfigured
+                                                        ? 'Ready'
+                                                        : 'Not Configured',
+                                                    style: TextStyle(
+                                                      color:
+                                                          isConfigured
+                                                              ? Colors.green
+                                                              : Colors.orange,
+                                                      fontSize: 12.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8.w),
+                                                Text(
+                                                  '${zone.cameras} camera${zone.cameras != 1 ? 's' : ''}',
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppTheme
+                                                            .textSecondaryColor,
+                                                    fontSize: 12.sp,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            child: Icon(
-                                              Icons.play_arrow,
-                                              color: AppTheme.textPrimaryColor,
-                                              size: 20.sp,
+                                          ],
+                                        ),
+                                      ),
+
+                                      // Join button/indicator
+                                      if (isConfigured)
+                                        Container(
+                                          padding: EdgeInsets.all(8.w),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryColor,
+                                            borderRadius: BorderRadius.circular(
+                                              8.r,
                                             ),
-                                          )
-                                        else
-                                          Icon(
-                                            Icons.warning,
-                                            color: Colors.orange,
+                                          ),
+                                          child: Icon(
+                                            Icons.play_arrow,
+                                            color: AppTheme.textPrimaryColor,
                                             size: 20.sp,
                                           ),
-                                      ],
-                                    ),
+                                        )
+                                      else
+                                        Icon(
+                                          Icons.warning,
+                                          color: Colors.orange,
+                                          size: 20.sp,
+                                        ),
+                                    ],
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                          },
+                        ),
               ),
             ],
           ),
